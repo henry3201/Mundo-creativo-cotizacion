@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1f2937">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon.svg">
+<title>Mundo Creativo - Cotización</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f3f4f6;
+    color: #111827;
+  }
+  .container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 18px;
+  }
+  .card {
+    background: white;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 4px 18px rgba(0,0,0,.08);
+  }
+  h1 { margin: 0 0 4px; font-size: 28px; }
+  .subtitle { color: #6b7280; margin-bottom: 20px; }
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 130px 160px auto;
+    gap: 10px;
+    align-items: end;
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 6px;
+  }
+  input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 9px;
+    font-size: 16px;
+  }
+  button {
+    border: 0;
+    border-radius: 9px;
+    padding: 12px 16px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .primary { background: #111827; color: white; }
+  .secondary { background: #e5e7eb; color: #111827; }
+  .danger { background: #fee2e2; color: #991b1b; padding: 8px 11px; }
+  .actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 22px;
+  }
+  th, td {
+    padding: 12px 8px;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+  }
+  th { background: #f9fafb; font-size: 14px; }
+  td.num, th.num { text-align: right; }
+  .summary {
+    margin-top: 20px;
+    margin-left: auto;
+    max-width: 360px;
+    border-top: 2px solid #111827;
+  }
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 25px;
+    padding: 10px 0;
+    font-size: 18px;
+  }
+  .summary-row.total {
+    font-size: 22px;
+    font-weight: bold;
+  }
+  .summary-row.balance {
+    font-size: 22px;
+    font-weight: bold;
+    border-top: 1px solid #d1d5db;
+  }
+  .summary-row input {
+    width: 150px;
+    text-align: right;
+    padding: 8px;
+  }
+  .whatsapp { background: #25D366; color: white; }
+  .empty {
+    text-align: center;
+    color: #6b7280;
+    padding: 28px 10px;
+  }
+  .quote-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 18px;
+  }
+  .quote-info input { font-size: 15px; }
+  @media (max-width: 700px) {
+    .container { padding: 10px; }
+    .card { padding: 15px; }
+    h1 { font-size: 23px; }
+    .form-grid { grid-template-columns: 1fr 1fr; }
+    .form-grid > div:first-child { grid-column: 1 / -1; }
+    .form-grid button { width: 100%; }
+    .quote-info { grid-template-columns: 1fr; }
+    table { font-size: 13px; }
+    th, td { padding: 9px 5px; }
+    .hide-mobile { display: none; }
+    .grand-total { font-size: 20px; }
+  }
+  @media print {
+    body { background: white; }
+    .container { max-width: none; padding: 0; }
+    .card { box-shadow: none; padding: 0; }
+    .no-print { display: none !important; }
+    .subtitle { margin-bottom: 10px; }
+    table { margin-top: 15px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <h1>Mundo Creativo</h1>
+    <div class="subtitle">Cotización / Registro de productos</div>
+
+    <div class="quote-info">
+      <div>
+        <label for="cliente">Cliente</label>
+        <input id="cliente" type="text" placeholder="Nombre del cliente">
+      </div>
+      <div>
+        <label for="fecha">Fecha</label>
+        <input id="fecha" type="date">
+      </div>
+    </div>
+
+    <div class="form-grid no-print" style="margin-top:18px;">
+      <div>
+        <label for="detalle">Detalle</label>
+        <input id="detalle" type="text" placeholder="Ej.: Trofeo deportivo">
+      </div>
+      <div>
+        <label for="cantidad">Cantidad</label>
+        <input id="cantidad" type="number" min="0.01" step="0.01" value="1">
+      </div>
+      <div>
+        <label for="precio">Valor unitario ($)</label>
+        <input id="precio" type="number" min="0" step="0.01" placeholder="0.00">
+      </div>
+      <div>
+        <button class="primary" onclick="agregarProducto()">+ Agregar</button>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Detalle</th>
+          <th class="num">Cantidad</th>
+          <th class="num">Valor unitario</th>
+          <th class="num">Total</th>
+          <th class="no-print"></th>
+        </tr>
+      </thead>
+      <tbody id="lista">
+        <tr id="vacio">
+          <td colspan="5" class="empty">Todavía no hay productos agregados.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="summary">
+      <div class="summary-row total">
+        <span>TOTAL:</span>
+        <span id="totalGeneral">$0.00</span>
+      </div>
+      <div class="summary-row no-print">
+        <label for="abono" style="margin:0; align-self:center;">ABONO:</label>
+        <input id="abono" type="number" min="0" step="0.01" value="0" placeholder="0.00">
+      </div>
+      <div class="summary-row balance">
+        <span>SALDO:</span>
+        <span id="saldo">$0.00</span>
+      </div>
+    </div>
+
+    <div class="actions no-print">
+      <button class="primary" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+      <button class="whatsapp" onclick="compartirWhatsApp()">💬 Compartir por WhatsApp</button>
+      <button class="secondary" onclick="guardar()">💾 Guardar</button>
+      <button class="secondary" onclick="cargar()">↻ Cargar guardado</button>
+      <button class="danger" onclick="borrarTodo()">🗑️ Borrar todo</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let productos = [];
+
+  const detalle = document.getElementById('detalle');
+  const cantidad = document.getElementById('cantidad');
+  const precio = document.getElementById('precio');
+  const lista = document.getElementById('lista');
+  const totalGeneral = document.getElementById('totalGeneral');
+  const cliente = document.getElementById('cliente');
+  const fecha = document.getElementById('fecha');
+  const abono = document.getElementById('abono');
+  const saldo = document.getElementById('saldo');
+
+  // Fecha actual
+  const hoy = new Date();
+  fecha.value = hoy.toISOString().split('T')[0];
+
+  function dinero(valor) {
+    return new Intl.NumberFormat('es-EC', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(valor);
+  }
+
+  function agregarProducto() {
+    const nombre = detalle.value.trim();
+    const cant = parseFloat(cantidad.value);
+    const unitario = parseFloat(precio.value);
+
+    if (!nombre) {
+      alert('Ingresa el detalle del producto.');
+      detalle.focus();
+      return;
+    }
+    if (!cant || cant <= 0) {
+      alert('Ingresa una cantidad válida.');
+      cantidad.focus();
+      return;
+    }
+    if (isNaN(unitario) || unitario < 0) {
+      alert('Ingresa un valor unitario válido.');
+      precio.focus();
+      return;
+    }
+
+    productos.push({
+      detalle: nombre,
+      cantidad: cant,
+      precio: unitario
+    });
+
+    detalle.value = '';
+    cantidad.value = '1';
+    precio.value = '';
+    detalle.focus();
+
+    actualizar();
+  }
+
+  function eliminarProducto(index) {
+    productos.splice(index, 1);
+    actualizar();
+  }
+
+  function actualizar() {
+    lista.innerHTML = '';
+
+    if (productos.length === 0) {
+      lista.innerHTML = '<tr><td colspan="5" class="empty">Todavía no hay productos agregados.</td></tr>';
+      totalGeneral.textContent = dinero(0);
+      saldo.textContent = dinero(Math.max(0, -(parseFloat(abono.value) || 0)));
+      return;
+    }
+
+    let suma = 0;
+
+    productos.forEach((p, index) => {
+      const total = p.cantidad * p.precio;
+      suma += total;
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${escapeHTML(p.detalle)}</td>
+        <td class="num">${p.cantidad}</td>
+        <td class="num">${dinero(p.precio)}</td>
+        <td class="num">${dinero(total)}</td>
+        <td class="num no-print">
+          <button class="danger" onclick="eliminarProducto(${index})">✕</button>
+        </td>
+      `;
+      lista.appendChild(tr);
+    });
+
+    totalGeneral.textContent = dinero(suma);
+    const pago = Math.max(0, parseFloat(abono.value) || 0);
+    saldo.textContent = dinero(Math.max(0, suma - pago));
+  }
+
+  function compartirWhatsApp() {
+    const total = productos.reduce((sum, p) => sum + (p.cantidad * p.precio), 0);
+    const pago = Math.max(0, parseFloat(abono.value) || 0);
+    const pendiente = Math.max(0, total - pago);
+
+    let mensaje = `*MUNDO CREATIVO - COTIZACIÓN*\n`;
+    if (cliente.value.trim()) mensaje += `Cliente: ${cliente.value.trim()}\n`;
+    if (fecha.value) mensaje += `Fecha: ${fecha.value}\n`;
+    mensaje += `\n`;
+
+    if (productos.length) {
+      productos.forEach((p, i) => {
+        mensaje += `${i + 1}. ${p.detalle} — ${p.cantidad} x ${dinero(p.precio)} = ${dinero(p.cantidad * p.precio)}\n`;
+      });
+    } else {
+      mensaje += `Sin productos registrados.\n`;
+    }
+
+    mensaje += `\n*TOTAL:* ${dinero(total)}`;
+    mensaje += `\n*ABONO:* ${dinero(pago)}`;
+    mensaje += `\n*SALDO:* ${dinero(pendiente)}`;
+
+    const url = 'https://wa.me/?text=' + encodeURIComponent(mensaje);
+    window.open(url, '_blank');
+  }
+
+  function escapeHTML(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function guardar() {
+    const datos = {
+      productos,
+      cliente: cliente.value,
+      fecha: fecha.value,
+      abono: parseFloat(abono.value) || 0
+    };
+    localStorage.setItem('mundoCreativoCotizacion', JSON.stringify(datos));
+    alert('Cotización guardada en este dispositivo.');
+  }
+
+  function cargar() {
+    const guardado = localStorage.getItem('mundoCreativoCotizacion');
+
+    if (!guardado) {
+      alert('No hay una cotización guardada.');
+      return;
+    }
+
+    const datos = JSON.parse(guardado);
+    productos = datos.productos || [];
+    cliente.value = datos.cliente || '';
+    fecha.value = datos.fecha || '';
+    actualizar();
+  }
+
+  function borrarTodo() {
+    if (!confirm('¿Seguro que quieres borrar todos los productos y datos?')) return;
+
+    productos = [];
+    cliente.value = '';
+    fecha.value = hoy.toISOString().split('T')[0];
+    abono.value = '0';
+    actualizar();
+  }
+
+  // Enter en precio agrega el producto
+  precio.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') agregarProducto();
+  });
+
+  abono.addEventListener('input', actualizar);
+
+  // Enter en detalle pasa a cantidad
+  detalle.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') cantidad.focus();
+  });
+
+  // Cargar automáticamente la última cotización guardada
+  window.addEventListener('load', () => {
+    const guardado = localStorage.getItem('mundoCreativoCotizacion');
+    if (guardado) {
+      const datos = JSON.parse(guardado);
+      productos = datos.productos || [];
+      cliente.value = datos.cliente || '';
+      fecha.value = datos.fecha || fecha.value;
+      abono.value = datos.abono || 0;
+      actualizar();
+    }
+  });
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js").catch(()=>{}));
+}
+</script>
+</body>
+</html>
